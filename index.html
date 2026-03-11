@@ -35,7 +35,6 @@
         .border-blue { border-left-color: #2196F3; }
         .border-orange { border-left-color: #ff9800; }
 
-        /* Grid específico para as tabelas dos cartões de crédito */
         .cartoes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; width: 100%; flex: 2;}
         .cartao-mini-card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid #9c27b0; }
         .cartao-mini-card h3 { margin-top: 0; color: #333; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
@@ -51,7 +50,11 @@
         
         .btn-cancelar { background-color: #f44336; margin-top: 10px; display: none; }
         .btn-cancelar:hover { background-color: #d32f2f; }
+        
         .btn-editar { background-color: #ff9800; padding: 5px 10px; font-size: 12px; width: auto; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-editar:hover { background-color: #e68a00; }
+        .btn-apagar { background-color: #f44336; padding: 5px 10px; font-size: 12px; width: auto; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+        .btn-apagar:hover { background-color: #d32f2f; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
@@ -103,6 +106,7 @@
                 <div class="card">
                     <h2 id="titulo-form">Lançar Nova Despesa</h2>
                     <div class="form-group"><label>Categoria</label><select id="g-categoria"><option value="transporte">Transporte</option><option value="alimentacao">Alimentação</option><option value="outros">Outros Gastos</option></select></div>
+                    <div class="form-group"><label>Data</label><input type="date" id="g-data"></div>
                     <div class="form-group"><label>Valor (R$)</label><input type="number" id="g-valor" step="0.01"></div>
                     <div class="form-group"><label>Justificativa</label><input type="text" id="g-justificativa"></div>
                     <button id="btn-salvar-gasto" onclick="salvarGasto()">Adicionar Gasto</button>
@@ -123,8 +127,8 @@
             <div class="card">
                 <h2>Histórico de Lançamentos</h2>
                 <table>
-                    <thead><tr><th>Categoria</th><th>Valor</th><th>Justificativa</th><th>Ação</th></tr></thead>
-                    <tbody id="tbody-gastos"><tr><td colspan="4">Carregando...</td></tr></tbody>
+                    <thead><tr><th>Categoria</th><th>Data</th><th>Valor</th><th>Justificativa</th><th>Ação</th></tr></thead>
+                    <tbody id="tbody-gastos"><tr><td colspan="5">Carregando...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -188,7 +192,6 @@
             <button class="btn-cancelar" style="display:block;" onclick="fecharModal('modal-cartao')">Cancelar</button>
         </div>
     </div>
-
     <div id="modal-conta" class="modal">
         <div class="modal-content">
             <h2>Editar Conta</h2>
@@ -200,7 +203,6 @@
             <button class="btn-cancelar" style="display:block;" onclick="fecharModal('modal-conta')">Cancelar</button>
         </div>
     </div>
-
     <div id="modal-bonus" class="modal">
         <div class="modal-content">
             <h2>Editar Bonus</h2>
@@ -212,8 +214,8 @@
     </div>
 
     <script>
-        // NOVA URL DO SCRIPT ATUALIZADA AQUI:
-        const URL_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbx4_i0igrFxHPyCfCU5btI5Ooklhad0ycOnpVw8BFB5nFoFmZsrQNn2ZHlP2EGXhxdD/exec";
+        // === NOVA URL DO SCRIPT ===
+        const URL_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbxiBX5M2pRg1F_E87GHqMaz2ixQE_pan1d2jBFQwv-tGRJrPlvoc2Alqm7DHrae6kI-/exec";
         
         let senhaAtiva = "";
         let modoEdicaoGasto = false; let linhaEmEdicaoGasto = null;
@@ -223,7 +225,6 @@
             const s = document.getElementById('senha-input'); const t = document.querySelector('.toggle-password');
             if(s.type === 'password'){ s.type = 'text'; t.innerText = '🙈'; } else { s.type = 'password'; t.innerText = '👁️'; }
         }
-
         document.getElementById('senha-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') realizarLogin(); });
 
         function formatarMoeda(valor) { return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
@@ -256,12 +257,14 @@
                     document.getElementById('app-container').style.display = "flex"; 
                     recarregarDados();
                 } else alert(data.mensagem);
-            }).finally(() => { btn.innerText = "Entrar"; btn.disabled = false; });
+            })
+            .catch(error => alert("Erro ao verificar senha. A Nova Versão do script foi gerada?"))
+            .finally(() => { btn.innerText = "Entrar"; btn.disabled = false; });
         }
 
         // ================= GASTOS =================
         function carregarGastos() {
-            document.getElementById('tbody-gastos').innerHTML = '<tr><td colspan="4">Carregando...</td></tr>';
+            document.getElementById('tbody-gastos').innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
             fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "carregar_dados", senha: senhaAtiva, mes: getMesSelecionado() }) })
             .then(res => res.json()).then(data => {
                 if(data.status === "sucesso") {
@@ -269,32 +272,51 @@
                     document.getElementById('t-alimentacao').innerText = formatarMoeda(data.totais.alimentacao);
                     document.getElementById('t-outros').innerText = formatarMoeda(data.totais.outros);
                     const tbody = document.getElementById('tbody-gastos'); tbody.innerHTML = "";
-                    if(data.lancamentos.length === 0) tbody.innerHTML = '<tr><td colspan="4">Vazio.</td></tr>';
+                    if(data.lancamentos.length === 0) tbody.innerHTML = '<tr><td colspan="5">Vazio.</td></tr>';
                     data.lancamentos.reverse().forEach(lanc => {
-                        tbody.innerHTML += `<tr><td style="text-transform: capitalize;">${lanc.categoria}</td><td>${formatarMoeda(lanc.valor)}</td><td>${lanc.justificativa}</td><td><button class="btn-editar" onclick="prepararEdicaoGasto(${lanc.linha}, '${lanc.categoria}', ${lanc.valor}, '${lanc.justificativa}')">Editar</button></td></tr>`;
+                        tbody.innerHTML += `<tr>
+                            <td style="text-transform: capitalize;">${lanc.categoria}</td>
+                            <td>${lanc.data_gasto}</td>
+                            <td>${formatarMoeda(lanc.valor)}</td>
+                            <td>${lanc.justificativa}</td>
+                            <td>
+                                <button class="btn-editar" onclick="prepararEdicaoGasto(${lanc.linha}, '${lanc.categoria}', '${lanc.data_gasto}', ${lanc.valor}, '${lanc.justificativa}')">Editar</button>
+                                <button class="btn-apagar" onclick="apagarGasto(${lanc.linha}, '${lanc.categoria}')">Apagar</button>
+                            </td>
+                        </tr>`;
                     });
                 } else { alert(data.mensagem); }
-            });
+            }).catch(e => console.error("Erro ao carregar:", e));
         }
-        function prepararEdicaoGasto(l, c, v, j) {
+        function prepararEdicaoGasto(l, c, d, v, j) {
             modoEdicaoGasto = true; linhaEmEdicaoGasto = l;
             document.getElementById('g-categoria').value = c; document.getElementById('g-categoria').disabled = true;
+            if (d && d.includes('/')) { const p = d.split('/'); document.getElementById('g-data').value = p[2] + '-' + p[1] + '-' + p[0]; } 
+            else { document.getElementById('g-data').value = d; }
             document.getElementById('g-valor').value = v; document.getElementById('g-justificativa').value = j;
             document.getElementById('btn-salvar-gasto').innerText = "Atualizar Gasto"; document.getElementById('btn-cancelar-gasto').style.display = "block";
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
         function cancelarEdicaoGasto() {
             modoEdicaoGasto = false; linhaEmEdicaoGasto = null; document.getElementById('g-categoria').disabled = false;
-            document.getElementById('g-valor').value = ""; document.getElementById('g-justificativa').value = "";
+            document.getElementById('g-data').value = ""; document.getElementById('g-valor').value = ""; document.getElementById('g-justificativa').value = "";
             document.getElementById('btn-salvar-gasto').innerText = "Adicionar Gasto"; document.getElementById('btn-cancelar-gasto').style.display = "none";
         }
         function salvarGasto() {
-            const v = document.getElementById('g-valor').value; const j = document.getElementById('g-justificativa').value;
-            if (!v || !j) return alert("Preencha tudo.");
+            const d = document.getElementById('g-data').value; const v = document.getElementById('g-valor').value; const j = document.getElementById('g-justificativa').value;
+            if (!v || !j || !d) return alert("Preencha data, valor e justificativa.");
             document.getElementById('btn-salvar-gasto').disabled = true;
-            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: modoEdicaoGasto ? "editar" : "adicionar", senha: senhaAtiva, mes: getMesSelecionado(), categoria: document.getElementById('g-categoria').value, valor: parseFloat(v.replace(',', '.')), justificativa: j, linha: linhaEmEdicaoGasto }) })
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: modoEdicaoGasto ? "editar" : "adicionar", senha: senhaAtiva, mes: getMesSelecionado(), categoria: document.getElementById('g-categoria').value, data_gasto: d, valor: parseFloat(v.replace(',', '.')), justificativa: j, linha: linhaEmEdicaoGasto }) })
             .then(res => res.json()).then(data => { if(data.status === "sucesso") { cancelarEdicaoGasto(); carregarGastos(); } else alert(data.mensagem); })
+            .catch(e => alert("Erro ao salvar. Verifique o Apps Script."))
             .finally(() => { document.getElementById('btn-salvar-gasto').disabled = false; });
+        }
+        function apagarGasto(linha, categoria) {
+            if(confirm("Tem certeza que deseja APAGAR este lançamento?")) {
+                fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "apagar_gasto", senha: senhaAtiva, mes: getMesSelecionado(), categoria: categoria, linha: linha }) })
+                .then(res => res.json()).then(data => { if(data.status === "sucesso") carregarGastos(); else alert(data.mensagem); })
+                .catch(e => alert("A ação não foi concluída. Verifique se você gerou uma 'Nova Versão' no Google Apps Script!"));
+            }
         }
 
         // ================= CARTÕES DE CRÉDITO =================
@@ -309,16 +331,18 @@
                         if(data.cartoes[nomeCartao].length === 0) { html += `<tr><td colspan="3">Sem lançamentos</td></tr>`; } 
                         else {
                             data.cartoes[nomeCartao].forEach(item => {
-                                html += `<tr><td>${item.descricao}</td><td>${formatarMoeda(item.valor)}</td><td><button class="btn-editar" onclick="abrirModalCartao(${item.linha}, '${item.descricao.replace(/'/g, "\\'")}', ${item.valor})">Editar</button></td></tr>`;
+                                html += `<tr><td>${item.descricao}</td><td>${formatarMoeda(item.valor)}</td><td>
+                                    <button class="btn-editar" onclick="abrirModalCartao(${item.linha}, '${item.descricao.replace(/'/g, "\\'")}', ${item.valor})">Editar</button>
+                                    <button class="btn-apagar" onclick="apagarCartao(${item.linha})">Apagar</button>
+                                </td></tr>`;
                             });
                         }
                         html += `</tbody></table></div>`;
                         grid.innerHTML += html;
                     });
                 } else alert(data.mensagem);
-            });
+            }).catch(e => console.error("Erro:", e));
         }
-
         function adicionarNoCartao() {
             const c = document.getElementById('c-nome').value; const d = document.getElementById('c-desc').value; const v = document.getElementById('c-valor').value;
             if(!d || !v) return alert("Preencha descrição e valor.");
@@ -329,16 +353,17 @@
                 else alert(data.mensagem);
             }).finally(() => { document.getElementById('btn-salvar-cartao').disabled = false; document.getElementById('btn-salvar-cartao').innerText = "Adicionar no Cartão"; });
         }
-
-        function abrirModalCartao(linha, desc, valor) {
-            linhaEdicaoCartao = linha; document.getElementById('m-cartao-desc').value = desc; document.getElementById('m-cartao-valor').value = valor;
-            document.getElementById('modal-cartao').style.display = "flex";
-        }
-
+        function abrirModalCartao(l, d, v) { linhaEdicaoCartao = l; document.getElementById('m-cartao-desc').value = d; document.getElementById('m-cartao-valor').value = v; document.getElementById('modal-cartao').style.display = "flex"; }
         function salvarEdicaoCartao() {
-            const d = document.getElementById('m-cartao-desc').value; const v = parseFloat(document.getElementById('m-cartao-valor').value.replace(',', '.'));
-            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "editar_cartao", senha: senhaAtiva, mes: getMesSelecionado(), linha: linhaEdicaoCartao, descricao: d, valor: v }) })
-            .then(res => res.json()).then(data => { if(data.status === "sucesso") { fecharModal('modal-cartao'); carregarCartoes(); } else alert(data.mensagem); });
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "editar_cartao", senha: senhaAtiva, mes: getMesSelecionado(), linha: linhaEdicaoCartao, descricao: document.getElementById('m-cartao-desc').value, valor: parseFloat(document.getElementById('m-cartao-valor').value.replace(',', '.')) }) })
+            .then(res => res.json()).then(data => { if(data.status === "sucesso") { fecharModal('modal-cartao'); carregarCartoes(); } });
+        }
+        function apagarCartao(linha) {
+            if(confirm("Tem certeza que deseja APAGAR este item da fatura?")) {
+                fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "apagar_cartao", senha: senhaAtiva, mes: getMesSelecionado(), linha: linha }) })
+                .then(res => res.json()).then(data => { if(data.status === "sucesso") carregarCartoes(); })
+                .catch(e => alert("A ação não foi concluída. Verifique se você gerou uma 'Nova Versão' no Google Apps Script!"));
+            }
         }
 
         // ================= FINANCEIRO =================
@@ -349,19 +374,42 @@
                 if(data.status === "sucesso") {
                     document.getElementById('res-fixas').innerText = formatarMoeda(data.resumo.fixas); document.getElementById('res-salario').innerText = formatarMoeda(data.resumo.salario);
                     document.getElementById('res-balanco').innerText = formatarMoeda(data.resumo.balanco); document.getElementById('res-extras').innerText = formatarMoeda(data.resumo.extras);
+                    
                     const tbContas = document.getElementById('tbody-contas'); tbContas.innerHTML = "";
                     if(data.contas.length === 0) tbContas.innerHTML = '<tr><td colspan="5">Vazio.</td></tr>';
-                    data.contas.forEach(c => { tbContas.innerHTML += `<tr><td>${c.conta}</td><td>${c.parcela}</td><td>${formatarMoeda(c.valor)}</td><td>${c.data}</td><td><button class="btn-editar" onclick="abrirModalConta(${c.linha}, '${c.conta}', '${c.parcela}', ${c.valor}, '${c.data}')">Editar</button></td></tr>`; });
+                    data.contas.forEach(c => { tbContas.innerHTML += `<tr><td>${c.conta}</td><td>${c.parcela}</td><td>${formatarMoeda(c.valor)}</td><td>${c.data}</td><td>
+                        <button class="btn-editar" onclick="abrirModalConta(${c.linha}, '${c.conta}', '${c.parcela}', ${c.valor}, '${c.data}')">Editar</button>
+                        <button class="btn-apagar" onclick="apagarConta(${c.linha})">Apagar</button>
+                    </td></tr>`; });
+                    
                     const tbBonus = document.getElementById('tbody-bonus'); tbBonus.innerHTML = "";
                     if(data.bonus.length === 0) tbBonus.innerHTML = '<tr><td colspan="3">Vazio.</td></tr>';
-                    data.bonus.forEach(b => { tbBonus.innerHTML += `<tr><td>${b.lancamento}</td><td>${formatarMoeda(b.valor)}</td><td><button class="btn-editar" onclick="abrirModalBonus(${b.linha}, '${b.lancamento}', ${b.valor})">Editar</button></td></tr>`; });
+                    data.bonus.forEach(b => { tbBonus.innerHTML += `<tr><td>${b.lancamento}</td><td>${formatarMoeda(b.valor)}</td><td>
+                        <button class="btn-editar" onclick="abrirModalBonus(${b.linha}, '${b.lancamento}', ${b.valor})">Editar</button>
+                        <button class="btn-apagar" onclick="apagarBonus(${b.linha})">Apagar</button>
+                    </td></tr>`; });
                 } else alert(data.mensagem);
             });
         }
         function abrirModalConta(l, c, p, v, d) { linhaEdicaoFin = l; document.getElementById('m-conta-nome').value = c; document.getElementById('m-conta-parcela').value = p; document.getElementById('m-conta-valor').value = v; document.getElementById('m-conta-data').value = d; document.getElementById('modal-conta').style.display = "flex"; }
         function salvarEdicaoConta() { fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "editar_conta", senha: senhaAtiva, mes: getMesSelecionado(), linha: linhaEdicaoFin, conta: document.getElementById('m-conta-nome').value, parcela: document.getElementById('m-conta-parcela').value, valor: parseFloat(document.getElementById('m-conta-valor').value.replace(',', '.')), data_venc: document.getElementById('m-conta-data').value }) }).then(res => res.json()).then(data => { if(data.status === "sucesso") { fecharModal('modal-conta'); carregarFinanceiro(); } }); }
+        function apagarConta(linha) {
+            if(confirm("Tem certeza que deseja APAGAR esta conta?")) {
+                fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "apagar_conta", senha: senhaAtiva, mes: getMesSelecionado(), linha: linha }) })
+                .then(res => res.json()).then(data => { if(data.status === "sucesso") carregarFinanceiro(); })
+                .catch(e => alert("A ação não foi concluída. Verifique se você gerou uma 'Nova Versão' no Google Apps Script!"));
+            }
+        }
+        
         function abrirModalBonus(l, n, v) { linhaEdicaoFin = l; document.getElementById('m-bonus-nome').value = n; document.getElementById('m-bonus-valor').value = v; document.getElementById('modal-bonus').style.display = "flex"; }
         function salvarEdicaoBonus() { fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "editar_bonus", senha: senhaAtiva, mes: getMesSelecionado(), linha: linhaEdicaoFin, lancamento: document.getElementById('m-bonus-nome').value, valor: parseFloat(document.getElementById('m-bonus-valor').value.replace(',', '.')) }) }).then(res => res.json()).then(data => { if(data.status === "sucesso") { fecharModal('modal-bonus'); carregarFinanceiro(); } }); }
+        function apagarBonus(linha) {
+            if(confirm("Tem certeza que deseja APAGAR este bônus?")) {
+                fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "apagar_bonus", senha: senhaAtiva, mes: getMesSelecionado(), linha: linha }) })
+                .then(res => res.json()).then(data => { if(data.status === "sucesso") carregarFinanceiro(); })
+                .catch(e => alert("A ação não foi concluída. Verifique se você gerou uma 'Nova Versão' no Google Apps Script!"));
+            }
+        }
     </script>
 </body>
 </html>
