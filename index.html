@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Financeiro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        #login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 300px; text-align: center; margin-top: 50px; }
+        .password-wrapper { position: relative; width: 100%; margin: 15px 0; }
+        .password-wrapper input { width: 100%; padding: 10px; padding-right: 40px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; text-align: center; }
+        .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; font-size: 18px; color: #666; }
+        
+        #app-container { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; }
+
+        #nav-bar { display: flex; width: 100%; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-btn { flex: 1; min-width: 150px; padding: 15px; background: #ddd; color: #555; text-align: center; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .nav-btn.active { background: #4CAF50; color: white; }
+        .nav-btn:hover:not(.active) { background: #ccc; }
+
+        .seletor-mes-container { display: flex; align-items: center; justify-content: center; gap: 15px; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; margin-bottom: 20px; border-left: 5px solid #2196F3;}
+        .seletor-mes-container select { max-width: 300px; font-size: 16px; font-weight: bold; color: #333; }
+
+        .view-section { display: none; width: 100%; flex-direction: column; gap: 20px; }
+        .view-section.active { display: flex; }
+        
+        .top-section { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: flex-start;}
+        .card { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        
+        .resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 100%; }
+        .resumo-card { padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
+        .resumo-card span { display: block; font-size: 22px; margin-top: 10px; color: #333; }
+        .border-red { border-left-color: #f44336; }
+        .border-blue { border-left-color: #2196F3; }
+        .border-orange { border-left-color: #ff9800; }
+
+        /* Grid específico para as tabelas dos cartões de crédito */
+        .cartoes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; width: 100%; flex: 2;}
+        .cartao-mini-card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid #9c27b0; }
+        .cartao-mini-card h3 { margin-top: 0; color: #333; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+
+        h2 { margin-top: 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s;}
+        button:hover { background-color: #45a049; }
+        button:disabled { background-color: #9ccc65; cursor: not-allowed; }
+        
+        .btn-cancelar { background-color: #f44336; margin-top: 10px; display: none; }
+        .btn-cancelar:hover { background-color: #d32f2f; }
+        .btn-editar { background-color: #ff9800; padding: 5px 10px; font-size: 12px; width: auto; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
+        th { background-color: #f8f9fa; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <div id="login-container">
+        <h2>Acesso Restrito</h2>
+        <div class="password-wrapper">
+            <input type="password" id="senha-input" placeholder="Digite a senha">
+            <span class="toggle-password" onclick="togglePassword()" title="Mostrar senha">👁️</span>
+        </div>
+        <button id="btn-login" onclick="realizarLogin()">Entrar</button>
+    </div>
+
+    <div id="app-container">
+        
+        <div id="nav-bar">
+            <div class="nav-btn active" onclick="mudarAba('gastos')" id="btn-tab-gastos">Lançamentos de Gastos</div>
+            <div class="nav-btn" onclick="mudarAba('cartoes')" id="btn-tab-cartoes">Lançamentos Cartão</div>
+            <div class="nav-btn" onclick="mudarAba('financeiro')" id="btn-tab-financeiro">Controle Financeiro</div>
+        </div>
+
+        <div class="seletor-mes-container">
+            <label for="select-mes-global" style="margin: 0; font-size: 18px;">Filtrar Mês:</label>
+            <select id="select-mes-global" onchange="recarregarDados()">
+                <option value="Janeiro">Janeiro</option>
+                <option value="Fevereiro">Fevereiro</option>
+                <option value="Março" selected>Março</option>
+                <option value="Abril">Abril</option>
+                <option value="Maio">Maio</option>
+                <option value="Junho">Junho</option>
+                <option value="Julho">Julho</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Setembro">Setembro</option>
+                <option value="Outubro">Outubro</option>
+                <option value="Novembro">Novembro</option>
+                <option value="Dezembro">Dezembro</option>
+            </select>
+        </div>
+
+        <div id="view-gastos" class="view-section active">
+            <div class="top-section">
+                <div class="card">
+                    <h2 id="titulo-form">Lançar Nova Despesa</h2>
+                    <div class="form-group"><label>Categoria</label><select id="g-categoria"><option value="transporte">Transporte</option><option value="alimentacao">Alimentação</option><option value="outros">Outros Gastos</option></select></div>
+                    <div class="form-group"><label>Valor (R$)</label><input type="number" id="g-valor" step="0.01"></div>
+                    <div class="form-group"><label>Justificativa</label><input type="text" id="g-justificativa"></div>
+                    <button id="btn-salvar-gasto" onclick="salvarGasto()">Adicionar Gasto</button>
+                    <button id="btn-cancelar-gasto" class="btn-cancelar" style="display:none;" onclick="cancelarEdicaoGasto()">Cancelar Edição</button>
+                </div>
+                <div class="card">
+                    <h2>Resumo do Mês</h2>
+                    <table>
+                        <thead><tr><th>Categoria</th><th>TOTAL</th><th>Orçamento</th></tr></thead>
+                        <tbody>
+                            <tr><td style="color: #d32f2f; font-weight: bold;">Transporte</td><td id="t-transporte">R$ 0,00</td><td style="color: #388e3c;">R$ 400,00</td></tr>
+                            <tr><td style="color: #d32f2f; font-weight: bold;">Alimentação</td><td id="t-alimentacao">R$ 0,00</td><td style="color: #388e3c;">R$ 1.500,00</td></tr>
+                            <tr><td style="color: #d32f2f; font-weight: bold;">Outros gastos</td><td id="t-outros">R$ 0,00</td><td style="color: #388e3c;">R$ 600,00</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Histórico de Lançamentos</h2>
+                <table>
+                    <thead><tr><th>Categoria</th><th>Valor</th><th>Justificativa</th><th>Ação</th></tr></thead>
+                    <tbody id="tbody-gastos"><tr><td colspan="4">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-cartoes" class="view-section">
+            <div class="top-section">
+                <div class="card" style="flex: 1;">
+                    <h2>Lançar no Cartão</h2>
+                    <div class="form-group">
+                        <label>Qual Cartão?</label>
+                        <select id="c-nome">
+                            <option value="Cartão Mercado Pago">Mercado Pago</option>
+                            <option value="Bradesco/Amazon">Bradesco / Amazon</option>
+                            <option value="Méliuz">Méliuz</option>
+                            <option value="Porto Bank">Porto Bank</option>
+                            <option value="Nubank">Nubank</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Descrição (O que comprou?)</label><input type="text" id="c-desc"></div>
+                    <div class="form-group"><label>Valor (R$)</label><input type="number" id="c-valor" step="0.01"></div>
+                    <button id="btn-salvar-cartao" onclick="adicionarNoCartao()">Adicionar no Cartão</button>
+                </div>
+                
+                <div class="cartoes-grid" id="lista-cartoes-tabelas">
+                    <p>Carregando faturas dos cartões...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-financeiro" class="view-section">
+            <div class="resumo-grid">
+                <div class="resumo-card border-red">Total Contas Fixas <span id="res-fixas">R$ 0,00</span></div>
+                <div class="resumo-card border-blue">Salário <span id="res-salario">R$ 0,00</span></div>
+                <div class="resumo-card border-orange">Extras / Variáveis <span id="res-extras">R$ 0,00</span></div>
+                <div class="resumo-card">Balanço (Sobra) <span id="res-balanco">R$ 0,00</span></div>
+            </div>
+            <div class="top-section">
+                <div class="card">
+                    <h2>Contas</h2>
+                    <table>
+                        <thead><tr><th>Conta</th><th>Parcela</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead>
+                        <tbody id="tbody-contas"><tr><td colspan="5">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <h2>Lançamentos de Bonus</h2>
+                    <table>
+                        <thead><tr><th>Lançamento</th><th>Valor</th><th>Ação</th></tr></thead>
+                        <tbody id="tbody-bonus"><tr><td colspan="3">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div> <div id="modal-cartao" class="modal">
+        <div class="modal-content">
+            <h2>Editar Fatura</h2>
+            <div class="form-group"><label>Descrição</label><input type="text" id="m-cartao-desc"></div>
+            <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="m-cartao-valor"></div>
+            <button onclick="salvarEdicaoCartao()">Atualizar Cartão</button>
+            <button class="btn-cancelar" style="display:block;" onclick="fecharModal('modal-cartao')">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modal-conta" class="modal">
+        <div class="modal-content">
+            <h2>Editar Conta</h2>
+            <div class="form-group"><label>Conta</label><input type="text" id="m-conta-nome"></div>
+            <div class="form-group"><label>Parcela</label><input type="text" id="m-conta-parcela"></div>
+            <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="m-conta-valor"></div>
+            <div class="form-group"><label>Data</label><input type="text" id="m-conta-data"></div>
+            <button onclick="salvarEdicaoConta()">Atualizar Conta</button>
+            <button class="btn-cancelar" style="display:block;" onclick="fecharModal('modal-conta')">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modal-bonus" class="modal">
+        <div class="modal-content">
+            <h2>Editar Bonus</h2>
+            <div class="form-group"><label>Lançamento</label><input type="text" id="m-bonus-nome"></div>
+            <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="m-bonus-valor"></div>
+            <button onclick="salvarEdicaoBonus()">Atualizar Bonus</button>
+            <button class="btn-cancelar" style="display:block;" onclick="fecharModal('modal-bonus')">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        // NOVA URL DO SCRIPT ATUALIZADA AQUI:
+        const URL_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbx4_i0igrFxHPyCfCU5btI5Ooklhad0ycOnpVw8BFB5nFoFmZsrQNn2ZHlP2EGXhxdD/exec";
+        
+        let senhaAtiva = "";
+        let modoEdicaoGasto = false; let linhaEmEdicaoGasto = null;
+        let linhaEdicaoFin = null; let linhaEdicaoCartao = null;
+
+        function togglePassword() {
+            const s = document.getElementById('senha-input'); const t = document.querySelector('.toggle-password');
+            if(s.type === 'password'){ s.type = 'text'; t.innerText = '🙈'; } else { s.type = 'password'; t.innerText = '👁️'; }
+        }
+
+        document.getElementById('senha-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') realizarLogin(); });
+
+        function formatarMoeda(valor) { return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function getMesSelecionado() { return document.getElementById('select-mes-global').value; }
+        function fecharModal(id) { document.getElementById(id).style.display = "none"; }
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + aba).classList.add('active');
+            document.getElementById('btn-tab-' + aba).classList.add('active');
+            recarregarDados();
+        }
+
+        function recarregarDados() {
+            if(document.getElementById('view-gastos').classList.contains('active')) carregarGastos();
+            else if(document.getElementById('view-cartoes').classList.contains('active')) carregarCartoes();
+            else carregarFinanceiro();
+        }
+
+        function realizarLogin() {
+            const senha = document.getElementById('senha-input').value; const btn = document.getElementById('btn-login');
+            if (!senha) return alert("Digite a senha.");
+            btn.innerText = "Verificando..."; btn.disabled = true;
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "login", senha: senha }) })
+            .then(res => res.json()).then(data => {
+                if (data.status === "sucesso") {
+                    senhaAtiva = senha;
+                    document.getElementById('login-container').style.display = "none";
+                    document.getElementById('app-container').style.display = "flex"; 
+                    recarregarDados();
+                } else alert(data.mensagem);
+            }).finally(() => { btn.innerText = "Entrar"; btn.disabled = false; });
+        }
+
+        // ================= GASTOS =================
+        function carregarGastos() {
+            document.getElementById('tbody-gastos').innerHTML = '<tr><td colspan="4">Carregando...</td></tr>';
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "carregar_dados", senha: senhaAtiva, mes: getMesSelecionado() }) })
+            .then(res => res.json()).then(data => {
+                if(data.status === "sucesso") {
+                    document.getElementById('t-transporte').innerText = formatarMoeda(data.totais.transporte);
+                    document.getElementById('t-alimentacao').innerText = formatarMoeda(data.totais.alimentacao);
+                    document.getElementById('t-outros').innerText = formatarMoeda(data.totais.outros);
+                    const tbody = document.getElementById('tbody-gastos'); tbody.innerHTML = "";
+                    if(data.lancamentos.length === 0) tbody.innerHTML = '<tr><td colspan="4">Vazio.</td></tr>';
+                    data.lancamentos.reverse().forEach(lanc => {
+                        tbody.innerHTML += `<tr><td style="text-transform: capitalize;">${lanc.categoria}</td><td>${formatarMoeda(lanc.valor)}</td><td>${lanc.justificativa}</td><td><button class="btn-editar" onclick="prepararEdicaoGasto(${lanc.linha}, '${lanc.categoria}', ${lanc.valor}, '${lanc.justificativa}')">Editar</button></td></tr>`;
+                    });
+                } else { alert(data.mensagem); }
+            });
+        }
+        function prepararEdicaoGasto(l, c, v, j) {
+            modoEdicaoGasto = true; linhaEmEdicaoGasto = l;
+            document.getElementById('g-categoria').value = c; document.getElementById('g-categoria').disabled = true;
+            document.getElementById('g-valor').value = v; document.getElementById('g-justificativa').value = j;
+            document.getElementById('btn-salvar-gasto').innerText = "Atualizar Gasto"; document.getElementById('btn-cancelar-gasto').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function cancelarEdicaoGasto() {
+            modoEdicaoGasto = false; linhaEmEdicaoGasto = null; document.getElementById('g-categoria').disabled = false;
+            document.getElementById('g-valor').value = ""; document.getElementById('g-justificativa').value = "";
+            document.getElementById('btn-salvar-gasto').innerText = "Adicionar Gasto"; document.getElementById('btn-cancelar-gasto').style.display = "none";
+        }
+        function salvarGasto() {
+            const v = document.getElementById('g-valor').value; const j = document.getElementById('g-justificativa').value;
+            if (!v || !j) return alert("Preencha tudo.");
+            document.getElementById('btn-salvar-gasto').disabled = true;
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: modoEdicaoGasto ? "editar" : "adicionar", senha: senhaAtiva, mes: getMesSelecionado(), categoria: document.getElementById('g-categoria').value, valor: parseFloat(v.replace(',', '.')), justificativa: j, linha: linhaEmEdicaoGasto }) })
+            .then(res => res.json()).then(data => { if(data.status === "sucesso") { cancelarEdicaoGasto(); carregarGastos(); } else alert(data.mensagem); })
+            .finally(() => { document.getElementById('btn-salvar-gasto').disabled = false; });
+        }
+
+        // ================= CARTÕES DE CRÉDITO =================
+        function carregarCartoes() {
+            document.getElementById('lista-cartoes-tabelas').innerHTML = '<p>Carregando faturas...</p>';
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "carregar_cartoes", senha: senhaAtiva, mes: getMesSelecionado() }) })
+            .then(res => res.json()).then(data => {
+                if(data.status === "sucesso") {
+                    const grid = document.getElementById('lista-cartoes-tabelas'); grid.innerHTML = "";
+                    Object.keys(data.cartoes).forEach(nomeCartao => {
+                        let html = `<div class="cartao-mini-card"><h3>${nomeCartao}</h3><table><thead><tr><th>Descrição</th><th>Valor</th><th>Ação</th></tr></thead><tbody>`;
+                        if(data.cartoes[nomeCartao].length === 0) { html += `<tr><td colspan="3">Sem lançamentos</td></tr>`; } 
+                        else {
+                            data.cartoes[nomeCartao].forEach(item => {
+                                html += `<tr><td>${item.descricao}</td><td>${formatarMoeda(item.valor)}</td><td><button class="btn-editar" onclick="abrirModalCartao(${item.linha}, '${item.descricao.replace(/'/g, "\\'")}', ${item.valor})">Editar</button></td></tr>`;
+                            });
+                        }
+                        html += `</tbody></table></div>`;
+                        grid.innerHTML += html;
+                    });
+                } else alert(data.mensagem);
+            });
+        }
+
+        function adicionarNoCartao() {
+            const c = document.getElementById('c-nome').value; const d = document.getElementById('c-desc').value; const v = document.getElementById('c-valor').value;
+            if(!d || !v) return alert("Preencha descrição e valor.");
+            document.getElementById('btn-salvar-cartao').disabled = true; document.getElementById('btn-salvar-cartao').innerText = "Salvando...";
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "adicionar_cartao", senha: senhaAtiva, mes: getMesSelecionado(), cartao: c, descricao: d, valor: parseFloat(v.replace(',', '.')) }) })
+            .then(res => res.json()).then(data => {
+                if(data.status === "sucesso") { document.getElementById('c-desc').value = ""; document.getElementById('c-valor').value = ""; carregarCartoes(); } 
+                else alert(data.mensagem);
+            }).finally(() => { document.getElementById('btn-salvar-cartao').disabled = false; document.getElementById('btn-salvar-cartao').innerText = "Adicionar no Cartão"; });
+        }
+
+        function abrirModalCartao(linha, desc, valor) {
+            linhaEdicaoCartao = linha; document.getElementById('m-cartao-desc').value = desc; document.getElementById('m-cartao-valor').value = valor;
+            document.getElementById('modal-cartao').style.display = "flex";
+        }
+
+        function salvarEdicaoCartao() {
+            const d = document.getElementById('m-cartao-desc').value; const v = parseFloat(document.getElementById('m-cartao-valor').value.replace(',', '.'));
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "editar_cartao", senha: senhaAtiva, mes: getMesSelecionado(), linha: linhaEdicaoCartao, descricao: d, valor: v }) })
+            .then(res => res.json()).then(data => { if(data.status === "sucesso") { fecharModal('modal-cartao'); carregarCartoes(); } else alert(data.mensagem); });
+        }
+
+        // ================= FINANCEIRO =================
+        function carregarFinanceiro() {
+            document.getElementById('tbody-contas').innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
+            fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "carregar_financeiro", senha: senhaAtiva, mes: getMesSelecionado() }) })
+            .then(res => res.json()).then(data => {
+                if(data.status === "sucesso") {
+                    document.getElementById('res-fixas').innerText = formatarMoeda(data.resumo.fixas); document.getElementById('res-salario').innerText = formatarMoeda(data.resumo.salario);
+                    document.getElementById('res-balanco').innerText = formatarMoeda(data.resumo.balanco); document.getElementById('res-extras').innerText = formatarMoeda(data.resumo.extras);
+                    const tbContas = document.getElementById('tbody-contas'); tbContas.innerHTML = "";
+                    if(data.contas.length === 0) tbContas.innerHTML = '<tr><td colspan="5">Vazio.</td></tr>';
+                    data.contas.forEach(c => { tbContas.innerHTML += `<tr><td>${c.conta}</td><td>${c.parcela}</td><td>${formatarMoeda(c.valor)}</td><td>${c.data}</td><td><button class="btn-editar" onclick="abrirModalConta(${c.linha}, '${c.conta}', '${c.parcela}', ${c.valor}, '${c.data}')">Editar</button></td></tr>`; });
+                    const tbBonus = document.getElementById('tbody-bonus'); tbBonus.innerHTML = "";
+                    if(data.bonus.length === 0) tbBonus.innerHTML = '<tr><td colspan="3">Vazio.</td></tr>';
+                    data.bonus.forEach(b => { tbBonus.innerHTML += `<tr><td>${b.lancamento}</td><td>${formatarMoeda(b.valor)}</td><td><button class="btn-editar" onclick="abrirModalBonus(${b.linha}, '${b.lancamento}', ${b.valor})">Editar</button></td></tr>`; });
+                } else alert(data.mensagem);
+            });
+        }
+        function abrirModalConta(l, c, p, v, d) { linhaEdicaoFin = l; document.getElementById('m-conta-nome').value = c; document.getElementById('m-conta-parcela').value = p; document.getElementById('m-conta-valor').value = v; document.getElementById('m-conta-data').value = d; document.getElementById('modal-conta').style.display = "flex"; }
+        function salvarEdicaoConta() { fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "editar_conta", senha: senhaAtiva, mes: getMesSelecionado(), linha: linhaEdicaoFin, conta: document.getElementById('m-conta-nome').value, parcela: document.getElementById('m-conta-parcela').value, valor: parseFloat(document.getElementById('m-conta-valor').value.replace(',', '.')), data_venc: document.getElementById('m-conta-data').value }) }).then(res => res.json()).then(data => { if(data.status === "sucesso") { fecharModal('modal-conta'); carregarFinanceiro(); } }); }
+        function abrirModalBonus(l, n, v) { linhaEdicaoFin = l; document.getElementById('m-bonus-nome').value = n; document.getElementById('m-bonus-valor').value = v; document.getElementById('modal-bonus').style.display = "flex"; }
+        function salvarEdicaoBonus() { fetch(URL_DO_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "editar_bonus", senha: senhaAtiva, mes: getMesSelecionado(), linha: linhaEdicaoFin, lancamento: document.getElementById('m-bonus-nome').value, valor: parseFloat(document.getElementById('m-bonus-valor').value.replace(',', '.')) }) }).then(res => res.json()).then(data => { if(data.status === "sucesso") { fecharModal('modal-bonus'); carregarFinanceiro(); } }); }
+    </script>
+</body>
+</html>
