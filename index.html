@@ -26,7 +26,7 @@
         .view-section.active { display: flex; }
         
         .top-section { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: flex-start;}
-        .card { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        .card { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex: 1; min-width: 300px; box-sizing: border-box; width: 100%; }
         
         .resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 100%; }
         .resumo-card { padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
@@ -51,15 +51,33 @@
         .btn-cancelar { background-color: #f44336; margin-top: 10px; display: none; }
         .btn-cancelar:hover { background-color: #d32f2f; }
         
-        .btn-editar { background-color: #ff9800; padding: 5px 10px; font-size: 12px; width: auto; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-editar:hover { background-color: #e68a00; }
-        .btn-apagar { background-color: #f44336; padding: 5px 10px; font-size: 12px; width: auto; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; }
-        .btn-apagar:hover { background-color: #d32f2f; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        /* Ajustes das Tabelas e Rolagem Responsiva */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 400px; } /* Min width garante que não amasse as colunas */
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
         th { background-color: #f8f9fa; }
         
+        /* Botões da Tabela Melhorados */
+        .btn-group { display: flex; gap: 5px; align-items: center; justify-content: flex-start; }
+        .btn-editar { background-color: #ff9800; padding: 6px 10px; font-size: 12px; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; text-align: center; }
+        .btn-editar:hover { background-color: #e68a00; }
+        .btn-apagar { background-color: #f44336; padding: 6px 10px; font-size: 12px; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; text-align: center; }
+        .btn-apagar:hover { background-color: #d32f2f; }
+
+        /* REGRAS EXCLUSIVAS PARA CELULAR (Telas Menores) */
+        @media (max-width: 768px) {
+            .seletor-mes-container { flex-direction: column; text-align: center; }
+            .seletor-mes-container select { width: 100%; max-width: 100%; }
+            .nav-btn { min-width: 30%; padding: 10px; font-size: 13px; }
+            
+            /* Tabela no mobile */
+            th, td { padding: 8px 4px; font-size: 12px; }
+            
+            /* Botões empilhados perfeitos para toque (Mobile) */
+            .btn-group { flex-direction: column; width: 100%; }
+            .btn-editar, .btn-apagar { width: 100%; padding: 8px; box-sizing: border-box; }
+        }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     </style>
@@ -114,22 +132,26 @@
                 </div>
                 <div class="card">
                     <h2>Resumo do Mês</h2>
-                    <table>
-                        <thead><tr><th>Categoria</th><th>TOTAL</th><th>Orçamento</th></tr></thead>
-                        <tbody>
-                            <tr><td style="color: #d32f2f; font-weight: bold;">Transporte</td><td id="t-transporte">R$ 0,00</td><td style="color: #388e3c;">R$ 400,00</td></tr>
-                            <tr><td style="color: #d32f2f; font-weight: bold;">Alimentação</td><td id="t-alimentacao">R$ 0,00</td><td style="color: #388e3c;">R$ 1.500,00</td></tr>
-                            <tr><td style="color: #d32f2f; font-weight: bold;">Outros gastos</td><td id="t-outros">R$ 0,00</td><td style="color: #388e3c;">R$ 600,00</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Categoria</th><th>TOTAL</th><th>Orçamento</th></tr></thead>
+                            <tbody>
+                                <tr><td style="color: #d32f2f; font-weight: bold;">Transporte</td><td id="t-transporte">R$ 0,00</td><td style="color: #388e3c;">R$ 400,00</td></tr>
+                                <tr><td style="color: #d32f2f; font-weight: bold;">Alimentação</td><td id="t-alimentacao">R$ 0,00</td><td style="color: #388e3c;">R$ 1.500,00</td></tr>
+                                <tr><td style="color: #d32f2f; font-weight: bold;">Outros gastos</td><td id="t-outros">R$ 0,00</td><td style="color: #388e3c;">R$ 600,00</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="card">
                 <h2>Histórico de Lançamentos</h2>
-                <table>
-                    <thead><tr><th>Categoria</th><th>Data</th><th>Valor</th><th>Justificativa</th><th>Ação</th></tr></thead>
-                    <tbody id="tbody-gastos"><tr><td colspan="5">Carregando...</td></tr></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Categoria</th><th>Data</th><th>Valor</th><th>Justificativa</th><th>Ação</th></tr></thead>
+                        <tbody id="tbody-gastos"><tr><td colspan="5">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -168,17 +190,21 @@
             <div class="top-section">
                 <div class="card">
                     <h2>Contas</h2>
-                    <table>
-                        <thead><tr><th>Conta</th><th>Parcela</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead>
-                        <tbody id="tbody-contas"><tr><td colspan="5">Carregando...</td></tr></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Conta</th><th>Parcela</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead>
+                            <tbody id="tbody-contas"><tr><td colspan="5">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="card">
                     <h2>Lançamentos de Bonus</h2>
-                    <table>
-                        <thead><tr><th>Lançamento</th><th>Valor</th><th>Ação</th></tr></thead>
-                        <tbody id="tbody-bonus"><tr><td colspan="3">Carregando...</td></tr></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Lançamento</th><th>Valor</th><th>Ação</th></tr></thead>
+                            <tbody id="tbody-bonus"><tr><td colspan="3">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -214,7 +240,6 @@
     </div>
 
     <script>
-        // === NOVA URL DO SCRIPT ===
         const URL_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbxiBX5M2pRg1F_E87GHqMaz2ixQE_pan1d2jBFQwv-tGRJrPlvoc2Alqm7DHrae6kI-/exec";
         
         let senhaAtiva = "";
@@ -280,8 +305,10 @@
                             <td>${formatarMoeda(lanc.valor)}</td>
                             <td>${lanc.justificativa}</td>
                             <td>
-                                <button class="btn-editar" onclick="prepararEdicaoGasto(${lanc.linha}, '${lanc.categoria}', '${lanc.data_gasto}', ${lanc.valor}, '${lanc.justificativa}')">Editar</button>
-                                <button class="btn-apagar" onclick="apagarGasto(${lanc.linha}, '${lanc.categoria}')">Apagar</button>
+                                <div class="btn-group">
+                                    <button class="btn-editar" onclick="prepararEdicaoGasto(${lanc.linha}, '${lanc.categoria}', '${lanc.data_gasto}', ${lanc.valor}, '${lanc.justificativa}')">Editar</button>
+                                    <button class="btn-apagar" onclick="apagarGasto(${lanc.linha}, '${lanc.categoria}')">Apagar</button>
+                                </div>
                             </td>
                         </tr>`;
                     });
@@ -327,17 +354,19 @@
                 if(data.status === "sucesso") {
                     const grid = document.getElementById('lista-cartoes-tabelas'); grid.innerHTML = "";
                     Object.keys(data.cartoes).forEach(nomeCartao => {
-                        let html = `<div class="cartao-mini-card"><h3>${nomeCartao}</h3><table><thead><tr><th>Descrição</th><th>Valor</th><th>Ação</th></tr></thead><tbody>`;
+                        let html = `<div class="cartao-mini-card"><h3>${nomeCartao}</h3><div class="table-responsive"><table><thead><tr><th>Descrição</th><th>Valor</th><th>Ação</th></tr></thead><tbody>`;
                         if(data.cartoes[nomeCartao].length === 0) { html += `<tr><td colspan="3">Sem lançamentos</td></tr>`; } 
                         else {
                             data.cartoes[nomeCartao].forEach(item => {
                                 html += `<tr><td>${item.descricao}</td><td>${formatarMoeda(item.valor)}</td><td>
-                                    <button class="btn-editar" onclick="abrirModalCartao(${item.linha}, '${item.descricao.replace(/'/g, "\\'")}', ${item.valor})">Editar</button>
-                                    <button class="btn-apagar" onclick="apagarCartao(${item.linha})">Apagar</button>
+                                    <div class="btn-group">
+                                        <button class="btn-editar" onclick="abrirModalCartao(${item.linha}, '${item.descricao.replace(/'/g, "\\'")}', ${item.valor})">Editar</button>
+                                        <button class="btn-apagar" onclick="apagarCartao(${item.linha})">Apagar</button>
+                                    </div>
                                 </td></tr>`;
                             });
                         }
-                        html += `</tbody></table></div>`;
+                        html += `</tbody></table></div></div>`;
                         grid.innerHTML += html;
                     });
                 } else alert(data.mensagem);
@@ -378,15 +407,19 @@
                     const tbContas = document.getElementById('tbody-contas'); tbContas.innerHTML = "";
                     if(data.contas.length === 0) tbContas.innerHTML = '<tr><td colspan="5">Vazio.</td></tr>';
                     data.contas.forEach(c => { tbContas.innerHTML += `<tr><td>${c.conta}</td><td>${c.parcela}</td><td>${formatarMoeda(c.valor)}</td><td>${c.data}</td><td>
-                        <button class="btn-editar" onclick="abrirModalConta(${c.linha}, '${c.conta}', '${c.parcela}', ${c.valor}, '${c.data}')">Editar</button>
-                        <button class="btn-apagar" onclick="apagarConta(${c.linha})">Apagar</button>
+                        <div class="btn-group">
+                            <button class="btn-editar" onclick="abrirModalConta(${c.linha}, '${c.conta}', '${c.parcela}', ${c.valor}, '${c.data}')">Editar</button>
+                            <button class="btn-apagar" onclick="apagarConta(${c.linha})">Apagar</button>
+                        </div>
                     </td></tr>`; });
                     
                     const tbBonus = document.getElementById('tbody-bonus'); tbBonus.innerHTML = "";
                     if(data.bonus.length === 0) tbBonus.innerHTML = '<tr><td colspan="3">Vazio.</td></tr>';
                     data.bonus.forEach(b => { tbBonus.innerHTML += `<tr><td>${b.lancamento}</td><td>${formatarMoeda(b.valor)}</td><td>
-                        <button class="btn-editar" onclick="abrirModalBonus(${b.linha}, '${b.lancamento}', ${b.valor})">Editar</button>
-                        <button class="btn-apagar" onclick="apagarBonus(${b.linha})">Apagar</button>
+                        <div class="btn-group">
+                            <button class="btn-editar" onclick="abrirModalBonus(${b.linha}, '${b.lancamento}', ${b.valor})">Editar</button>
+                            <button class="btn-apagar" onclick="apagarBonus(${b.linha})">Apagar</button>
+                        </div>
                     </td></tr>`; });
                 } else alert(data.mensagem);
             });
